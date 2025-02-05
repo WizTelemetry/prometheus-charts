@@ -29,11 +29,11 @@ def change_style(style, representer):
 
 refs = {
     # https://github.com/prometheus-operator/kube-prometheus
-    'ref.kube-prometheus': 'b5b59bc0b45508b85647eb7a84b96dc167be15f1',
+    'ref.kube-prometheus': 'e9e35af6cd0c3013397d056779d684a1d0185af8',
     # https://github.com/kubernetes-monitoring/kubernetes-mixin
-    'ref.kubernetes-mixin': 'de834e9a291b49396125768f041e2078763f48b5',
+    'ref.kubernetes-mixin': 'c4893ae331ef1a9e49ca151460a57c5c5e60ebda',
     # https://github.com/etcd-io/etcd
-    'ref.etcd': '1c22e7b36bc5d8543f1646212f2960f9fe503b8c',
+    'ref.etcd': 'c6b9e9e9277121b347f63eb82d28c2c79611557e',
 }
 
 # Source files list
@@ -78,6 +78,7 @@ charts = [
 
 # Additional conditions map
 condition_map = {
+    'alertmanager-overview': ' (or .Values.alertmanager.enabled .Values.alertmanager.forceDeployDashboards)',
     'grafana-coredns-k8s': ' .Values.coreDns.enabled',
     'etcd': ' .Values.kubeEtcd.enabled',
     'apiserver': ' .Values.kubeApiServer.enabled',
@@ -88,6 +89,7 @@ condition_map = {
     'node-rsrc-use': ' (or .Values.nodeExporter.enabled .Values.nodeExporter.forceDeployDashboards)',
     'node-cluster-rsrc-use': ' (or .Values.nodeExporter.enabled .Values.nodeExporter.forceDeployDashboards)',
     'nodes': ' (and (or .Values.nodeExporter.enabled .Values.nodeExporter.forceDeployDashboards) .Values.nodeExporter.operatingSystems.linux.enabled)',
+    'nodes-aix': ' (and (or .Values.nodeExporter.enabled .Values.nodeExporter.forceDeployDashboards) .Values.nodeExporter.operatingSystems.aix.enabled)',
     'nodes-darwin': ' (and (or .Values.nodeExporter.enabled .Values.nodeExporter.forceDeployDashboards) .Values.nodeExporter.operatingSystems.darwin.enabled)',
     'prometheus-remote-write': ' .Values.prometheus.prometheusSpec.remoteWriteDashboards',
     'k8s-coredns': ' .Values.coreDns.enabled',
@@ -205,10 +207,17 @@ def patch_json_set_editable_as_variable(content):
 
 
 def jsonnet_import_callback(base, rel):
+    # rel_base is the path relative to the current cwd.
+    # see https://github.com/prometheus-community/helm-charts/issues/5283
+    # for more details.
+    rel_base = base
+    if rel_base.startswith(os.getcwd()):
+        rel_base = base[len(os.getcwd()):]
+
     if "github.com" in rel:
         base = os.getcwd() + '/vendor/'
-    elif "github.com" in base:
-        base = os.getcwd() + '/vendor/' + base[base.find('github.com'):]
+    elif "github.com" in rel_base:
+        base = os.getcwd() + '/vendor/' + rel_base[rel_base.find('github.com'):]
 
     if os.path.isfile(base + rel):
         return base + rel, open(base + rel).read().encode('utf-8')

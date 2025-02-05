@@ -66,7 +66,7 @@ spec:
 {{- end }}
   publishNotReadyAddresses: {{ .Values.prometheus.service.publishNotReadyAddresses }}
   selector:
-    {{- if .Values.prometheus.agentMode }}
+    {{- if eq (tpl .Values.prometheus.agentMode .) "true" }}
     app.kubernetes.io/name: prometheus-agent
     {{- else }}
     app.kubernetes.io/name: prometheus

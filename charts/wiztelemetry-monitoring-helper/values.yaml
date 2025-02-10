@@ -42,16 +42,16 @@ whizardHelper:
   enabled: false
 
 reverseProxy:
-  enabled: true
+  enabled: false
   endpoint: http://prometheus-k8s.kubesphere-monitoring-system.svc:9090
 roleTemplate:
-  enabled: true
+  enabled: false
 
 
 defaultRules:
   create: true
   rules:
-    wiztelemetry: 
+    wiztelemetry:
       apiserver: true
       cluster: true
       namespace: true
@@ -64,7 +64,7 @@ defaultRules:
       nvidiaGPU: true
 
   additionalRuleGroupLabels:
-    wiztelemetry: 
+    wiztelemetry:
       apiserver: {}
       cluster: {}
       namespace: {}
@@ -78,7 +78,7 @@ defaultRules:
 
   ## Additional labels for PrometheusRule alerts
   additionalRuleLabels: {}
-  
+
   ## Labels for default rules
   labels:
     prometheus: k8s

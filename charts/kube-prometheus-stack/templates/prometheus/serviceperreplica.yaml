@@ -45,7 +45,7 @@ items:
           port: {{ $serviceValues.port }}
           targetPort: {{ $serviceValues.targetPort }}
       selector:
-        {{- if $.Values.prometheus.agentMode }}
+        {{- if eq (tpl .Values.prometheus.agentMode .) "true" }}
         app.kubernetes.io/name: prometheus-agent
         statefulset.kubernetes.io/pod-name: prom-agent-{{ include "kube-prometheus-stack.prometheus.crname" $ }}-{{ $i }}
         {{- else }}

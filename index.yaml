@@ -54166,4 +54166,15 @@ entries:
     urls:
     - https://prometheus-community.github.io/helm-charts/prometheus-to-sd-0.1.0.tgz
     version: 0.1.0
-generated: "2024-08-28T05:28:39.974333267Z"
+  wiztelemetry-monitoring-helper:
+  - apiVersion: v2
+    appVersion: 1.16.0
+    created: "2025-02-11T01:27:23.023652556Z"
+    description: A Helm chart for Kubernetes
+    digest: 8d839f281fff62037103dcd05c1d6ff640beebc017c309c13b62cd2d7c1a0dfe
+    name: wiztelemetry-monitoring-helper
+    type: application
+    urls:
+    - https://github.com/WizTelemetry/prometheus-charts/releases/download/wiztelemetry-monitoring-helper-0.6.0/wiztelemetry-monitoring-helper-0.6.0.tgz
+    version: 0.6.0
+generated: "2025-02-11T01:27:23.02585034Z"

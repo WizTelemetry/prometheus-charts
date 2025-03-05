@@ -1,5 +1,5 @@
 {{- if .Values.prometheus.enabled }}
-{{- if eq (tpl .Values.prometheus.agentMode .) "true" }}
+{{- if .Values.prometheus.agentMode }}
 apiVersion: monitoring.coreos.com/v1alpha1
 kind: PrometheusAgent
 {{- else }}
@@ -20,7 +20,7 @@ spec:
 {{- if not (kindIs "invalid" .Values.prometheus.prometheusSpec.automountServiceAccountToken) }}
   automountServiceAccountToken: {{ .Values.prometheus.prometheusSpec.automountServiceAccountToken }}
 {{- end }}
-{{- if and (ne (tpl .Values.prometheus.agentMode .) "true") (or .Values.prometheus.prometheusSpec.alertingEndpoints .Values.alertmanager.enabled) }}
+{{- if and (not .Values.prometheus.agentMode) (or .Values.prometheus.prometheusSpec.alertingEndpoints .Values.alertmanager.enabled) }}
   alerting:
     alertmanagers:
 {{- if .Values.prometheus.prometheusSpec.alertingEndpoints }}
@@ -97,14 +97,14 @@ spec:
   logLevel:  {{ .Values.prometheus.prometheusSpec.logLevel }}
   logFormat:  {{ .Values.prometheus.prometheusSpec.logFormat }}
   listenLocal: {{ .Values.prometheus.prometheusSpec.listenLocal }}
-{{- if ne (tpl .Values.prometheus.agentMode .) "true" }}
+{{- if not .Values.prometheus.agentMode }}
   enableAdminAPI: {{ .Values.prometheus.prometheusSpec.enableAdminAPI }}
 {{- end }}
 {{- if .Values.prometheus.prometheusSpec.web }}
   web:
 {{ toYaml .Values.prometheus.prometheusSpec.web | indent 4 }}
 {{- end }}
-{{- if and (ne (tpl .Values.prometheus.agentMode .) "true") .Values.prometheus.prometheusSpec.exemplars }}
+{{- if and (not .Values.prometheus.agentMode) .Values.prometheus.prometheusSpec.exemplars }}
   exemplars:
     {{- toYaml .Values.prometheus.prometheusSpec.exemplars | nindent 4 }}
 {{- end }}
@@ -118,20 +118,23 @@ spec:
   scrapeClasses:
     {{- tpl (toYaml . | nindent 4) $ }}
 {{- end }}
+{{- if .Values.prometheus.prometheusSpec.scrapeFailureLogFile }}
+  scrapeFailureLogFile: {{ .Values.prometheus.prometheusSpec.scrapeFailureLogFile }}
+{{- end }}
 {{- if .Values.prometheus.prometheusSpec.scrapeInterval }}
   scrapeInterval: {{ .Values.prometheus.prometheusSpec.scrapeInterval }}
 {{- end }}
 {{- if .Values.prometheus.prometheusSpec.scrapeTimeout }}
   scrapeTimeout: {{ .Values.prometheus.prometheusSpec.scrapeTimeout }}
 {{- end }}
-{{- if and (ne (tpl .Values.prometheus.agentMode .) "true") .Values.prometheus.prometheusSpec.evaluationInterval }}
+{{- if and (not .Values.prometheus.agentMode) .Values.prometheus.prometheusSpec.evaluationInterval }}
   evaluationInterval: {{ .Values.prometheus.prometheusSpec.evaluationInterval }}
 {{- end }}
 {{- if .Values.prometheus.prometheusSpec.resources }}
   resources:
 {{ toYaml .Values.prometheus.prometheusSpec.resources | indent 4 }}
 {{- end }}
-{{- if ne (tpl .Values.prometheus.agentMode .) "true" }}
+{{- if not .Values.prometheus.agentMode }}
   retention: {{ .Values.prometheus.prometheusSpec.retention | quote  }}
 {{- if .Values.prometheus.prometheusSpec.retentionSize }}
   retentionSize: {{ .Values.prometheus.prometheusSpec.retentionSize | quote }}
@@ -153,11 +156,11 @@ spec:
 {{- end }}
 {{- if .Values.prometheus.prometheusSpec.secrets }}
   secrets:
-{{ toYaml .Values.prometheus.prometheusSpec.secrets | indent 4 }}
+{{ tpl (toYaml .Values.prometheus.prometheusSpec.secrets) . | indent 4 }}
 {{- end }}
 {{- if .Values.prometheus.prometheusSpec.configMaps }}
   configMaps:
-{{ toYaml .Values.prometheus.prometheusSpec.configMaps | indent 4 }}
+{{ tpl (toYaml .Values.prometheus.prometheusSpec.configMaps) . | indent 4 }}
 {{- end }}
   serviceAccountName: {{ template "kube-prometheus-stack.prometheus.serviceAccountName" . }}
 {{- if .Values.prometheus.prometheusSpec.serviceMonitorSelector }}
@@ -208,7 +211,7 @@ spec:
 {{ else }}
   probeNamespaceSelector: {}
 {{- end }}
-{{- if and (ne (tpl .Values.prometheus.agentMode .) "true") (or .Values.prometheus.prometheusSpec.remoteRead .Values.prometheus.prometheusSpec.additionalRemoteRead) }}
+{{- if and (not .Values.prometheus.agentMode) (or .Values.prometheus.prometheusSpec.remoteRead .Values.prometheus.prometheusSpec.additionalRemoteRead) }}
   remoteRead:
 {{- if .Values.prometheus.prometheusSpec.remoteRead }}
 {{ tpl (toYaml .Values.prometheus.prometheusSpec.remoteRead | indent 4) . }}
@@ -217,9 +220,9 @@ spec:
 {{ toYaml .Values.prometheus.prometheusSpec.additionalRemoteRead | indent 4 }}
 {{- end }}
 {{- end }}
-{{- if (or .Values.prometheus.prometheusSpec.remoteWrite .Values.prometheus.prometheusSpec.additionalRemoteWrite (eq (tpl .Values.prometheus.agentMode .) "true")) }}
+{{- if (or .Values.prometheus.prometheusSpec.remoteWrite .Values.prometheus.prometheusSpec.additionalRemoteWrite .Values.prometheus.agentMode) }}
   remoteWrite:
-{{- if and (eq (tpl .Values.prometheus.agentMode .) "true") .Values.prometheus.prometheusSpec.internalRemoteWrite }}
+{{- if and .Values.prometheus.agentMode .Values.prometheus.prometheusSpec.internalRemoteWrite }}
 {{ tpl (toYaml .Values.prometheus.prometheusSpec.internalRemoteWrite | indent 4) . }}
 {{- end }}
 {{- if .Values.prometheus.prometheusSpec.remoteWrite }}
@@ -233,7 +236,7 @@ spec:
   securityContext:
 {{ toYaml .Values.prometheus.prometheusSpec.securityContext | indent 4 }}
 {{- end }}
-{{- if ne (tpl .Values.prometheus.agentMode .) "true" }}
+{{- if not .Values.prometheus.agentMode }}
 {{- if .Values.prometheus.prometheusSpec.ruleNamespaceSelector }}
   ruleNamespaceSelector:
 {{ tpl (toYaml .Values.prometheus.prometheusSpec.ruleNamespaceSelector | indent 4) . }}
@@ -279,7 +282,7 @@ spec:
   podMetadata:
 {{ tpl (toYaml .Values.prometheus.prometheusSpec.podMetadata | indent 4) . }}
 {{- end }}
-{{- if and (ne (tpl .Values.prometheus.agentMode .) "true") .Values.prometheus.prometheusSpec.query }}
+{{- if and (not .Values.prometheus.agentMode) .Values.prometheus.prometheusSpec.query }}
   query:
 {{ toYaml .Values.prometheus.prometheusSpec.query | indent 4}}
 {{- end }}
@@ -327,10 +330,10 @@ spec:
 {{- end }}
 {{- if .Values.prometheus.prometheusSpec.additionalScrapeConfigsSecret.enabled }}
   additionalScrapeConfigs:
-    name: {{ .Values.prometheus.prometheusSpec.additionalScrapeConfigsSecret.name }}
+    name: {{ tpl (.Values.prometheus.prometheusSpec.additionalScrapeConfigsSecret.name) . }}
     key: {{ .Values.prometheus.prometheusSpec.additionalScrapeConfigsSecret.key }}
 {{- end }}
-{{- if ne (tpl .Values.prometheus.agentMode .) "true" }}
+{{- if not .Values.prometheus.agentMode }}
 {{- if or .Values.prometheus.prometheusSpec.additionalAlertManagerConfigs .Values.prometheus.prometheusSpec.additionalAlertManagerConfigsSecret }}
   additionalAlertManagerConfigs:
 {{- if .Values.prometheus.prometheusSpec.additionalAlertManagerConfigs }}
@@ -338,7 +341,7 @@ spec:
     key: additional-alertmanager-configs.yaml
 {{- end }}
 {{- if .Values.prometheus.prometheusSpec.additionalAlertManagerConfigsSecret }}
-    name: {{ .Values.prometheus.prometheusSpec.additionalAlertManagerConfigsSecret.name }}
+    name: {{ tpl (.Values.prometheus.prometheusSpec.additionalAlertManagerConfigsSecret.name) . }}
     key: {{ .Values.prometheus.prometheusSpec.additionalAlertManagerConfigsSecret.key }}
     {{- if hasKey .Values.prometheus.prometheusSpec.additionalAlertManagerConfigsSecret "optional" }}
     optional: {{ .Values.prometheus.prometheusSpec.additionalAlertManagerConfigsSecret.optional }}
@@ -352,7 +355,7 @@ spec:
 {{- end }}
 {{- if .Values.prometheus.prometheusSpec.additionalAlertRelabelConfigsSecret }}
   additionalAlertRelabelConfigs:
-    name: {{ .Values.prometheus.prometheusSpec.additionalAlertRelabelConfigsSecret.name }}
+    name: {{ tpl (.Values.prometheus.prometheusSpec.additionalAlertRelabelConfigsSecret.name) . }}
     key: {{ .Values.prometheus.prometheusSpec.additionalAlertRelabelConfigsSecret.key }}
 {{- end }}
 {{- end }}
@@ -367,10 +370,10 @@ spec:
 {{- if .Values.prometheus.prometheusSpec.priorityClassName }}
   priorityClassName: {{ .Values.prometheus.prometheusSpec.priorityClassName }}
 {{- end }}
-{{- if ne (tpl .Values.prometheus.agentMode .) "true" }}
+{{- if not .Values.prometheus.agentMode }}
 {{- if .Values.prometheus.prometheusSpec.thanos }}
   thanos:
-{{- with (omit .Values.prometheus.prometheusSpec.thanos "objectStorageConfig")}}
+{{- with (omit .Values.prometheus.prometheusSpec.thanos "objectStorageConfig" "secretProviderClass") }}
 {{ toYaml . | indent 4 }}
 {{- end }}
 {{- if ((.Values.prometheus.prometheusSpec.thanos.objectStorageConfig).existingSecret) }}
@@ -412,7 +415,7 @@ spec:
 {{- if .Values.prometheus.prometheusSpec.enforcedNamespaceLabel }}
   enforcedNamespaceLabel: {{ .Values.prometheus.prometheusSpec.enforcedNamespaceLabel }}
 {{- $prometheusDefaultRulesExcludedFromEnforce := (include "rules.names" .) | fromYaml }}
-{{- if ne (tpl .Values.prometheus.agentMode .) "true" }}
+{{- if not .Values.prometheus.agentMode }}
   prometheusRulesExcludedFromEnforce:
 {{- range $prometheusDefaultRulesExcludedFromEnforce.rules }}
     - ruleNamespace: "{{ template "kube-prometheus-stack.namespace" $ }}"
@@ -433,7 +436,7 @@ spec:
 {{ tpl (toYaml .Values.prometheus.prometheusSpec.excludedFromEnforcement | indent 4) . }}
 {{- end }}
 {{- end }}
-{{- if and (ne (tpl .Values.prometheus.agentMode .) "true") .Values.prometheus.prometheusSpec.queryLogFile }}
+{{- if and (not .Values.prometheus.agentMode) .Values.prometheus.prometheusSpec.queryLogFile }}
   queryLogFile: {{ .Values.prometheus.prometheusSpec.queryLogFile }}
 {{- end }}
 {{- if .Values.prometheus.prometheusSpec.sampleLimit }}
@@ -457,8 +460,11 @@ spec:
 {{- if .Values.prometheus.prometheusSpec.enforcedLabelValueLengthLimit}}
   enforcedLabelValueLengthLimit: {{ .Values.prometheus.prometheusSpec.enforcedLabelValueLengthLimit	}}
 {{- end }}
-{{- if and (ne (tpl .Values.prometheus.agentMode .) "true") .Values.prometheus.prometheusSpec.allowOverlappingBlocks }}
+{{- if and (not .Values.prometheus.agentMode) .Values.prometheus.prometheusSpec.allowOverlappingBlocks }}
   allowOverlappingBlocks: {{ .Values.prometheus.prometheusSpec.allowOverlappingBlocks }}
+{{- end }}
+{{- if .Values.prometheus.prometheusSpec.nameValidationScheme }}
+  nameValidationScheme: {{ .Values.prometheus.prometheusSpec.nameValidationScheme }}
 {{- end }}
 {{- if .Values.prometheus.prometheusSpec.minReadySeconds }}
   minReadySeconds: {{ .Values.prometheus.prometheusSpec.minReadySeconds }}

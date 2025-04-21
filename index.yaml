@@ -54406,6 +54406,16 @@ entries:
   wiztelemetry-monitoring-helper:
   - apiVersion: v2
     appVersion: 1.2.0
+    created: "2025-04-21T09:06:49.500263522Z"
+    description: A Helm chart for Kubernetes
+    digest: a0060fb6e22f26b74f19334affbd9b057180a0aecb0329b81c531c5722bcd3a8
+    name: wiztelemetry-monitoring-helper
+    type: application
+    urls:
+    - https://github.com/WizTelemetry/prometheus-charts/releases/download/wiztelemetry-monitoring-helper-0.10.0/wiztelemetry-monitoring-helper-0.10.0.tgz
+    version: 0.10.0
+  - apiVersion: v2
+    appVersion: 1.2.0
     created: "2025-04-16T08:43:20.6032563Z"
     description: A Helm chart for Kubernetes
     digest: 93a6b4093c53950772b13b9264da7a149de85d2d33e3397e3307ad38ab0d593c
@@ -54444,4 +54454,4 @@ entries:
     urls:
     - https://github.com/WizTelemetry/prometheus-charts/releases/download/wiztelemetry-monitoring-helper-0.6.0/wiztelemetry-monitoring-helper-0.6.0.tgz
     version: 0.6.0
-generated: "2025-04-16T08:43:20.606751Z"
+generated: "2025-04-21T09:06:49.502134627Z"

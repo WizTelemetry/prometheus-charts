@@ -3,6 +3,7 @@
     cambriconMLUMonitoringSelector: 'job="mlu-monitoring"',
     nvidiaGPUMonitoringSelector: 'job="nvidia-dcgm-exporter"',
     ascendNPUMonitoringSelector: 'job="npu-exporter"',
+    kunlunxinXPUMonitoringSelector: 'job="xpu-exporter"',
     kubeStateMetricsSelector: 'job="kube-state-metrics"',
     clusterLabel: 'cluster',
   },
@@ -489,6 +490,145 @@
             expr: |||
               sum by(%(clusterLabel)s, node) (
                   kube_node_status_allocatable{%(kubeStateMetricsSelector)s,resource=~"huawei_com_Ascend(.*)"}
+              )
+            ||| % $._config,
+          },
+        ],
+      },
+      {
+        name: "wiztelemetry-kunlunxin-xpu.rules",
+        rules: [
+          {
+            record: 'node_namespace_pod_container:container_gpu_utilization',
+            expr: |||
+                sum by (%(clusterLabel)s, namespace, pod, container, node) (
+                    label_replace(
+                      label_replace(
+                        node_container_xpu_utilization{container_name!="",%(kunlunxinXPUMonitoringSelector)s,pod_name!=""} / 100,
+                        "container",
+                        "$1",
+                        "container_name",
+                        "(.*)"
+                      ),
+                      "pod",
+                      "$1",
+                      "pod_name",
+                      "(.*)"
+                    )
+                )
+            ||| % $._config,
+          },
+          {
+            record: 'node_namespace_pod_container:container_gpu_memory_usage',
+            expr: |||
+                sum by (%(clusterLabel)s, namespace, pod, container, node) (
+                    label_replace(
+                      label_replace(
+                        node_container_xpu_memused{container_name!="",exported_namespace!="",%(kunlunxinXPUMonitoringSelector)s,pod_name!=""} * 1024 * 1024,
+                        "container",
+                        "$1",
+                        "container_name",
+                        "(.*)"
+                      ),
+                      "pod",
+                      "$1",
+                      "pod_name",
+                      "(.*)"
+                    )
+                )
+            ||| % $._config,
+          },
+          {
+            record: 'node:gpu_device:gpu_temperature',
+            expr: |||
+                label_replace(
+                  label_replace(node_xpu_temp{%(kunlunxinXPUMonitoringSelector)s}, "device_num", "xpu${1}", "devid", "(.*)"),
+                  "device_name",
+                  "$1",
+                  "type",
+                  "(.*)"
+                )
+            ||| % $._config,
+          },
+          {
+            record: 'node:gpu_device:gpu_power_usage',
+            expr: |||
+                label_replace(
+                  label_replace(node_xpu_powerUsage{%(kunlunxinXPUMonitoringSelector)s}, "device_num", "xpu${1}", "devid", "(.*)"),
+                  "device_name",
+                  "$1",
+                  "type",
+                  "(.*)"
+                )
+            ||| % $._config,
+          },
+          {
+            record: 'node:gpu_device:gpu_memory_used_bytes',
+            expr: |||
+                label_replace(
+                  label_replace(node_xpu_memused{%(kunlunxinXPUMonitoringSelector)s}, "device_num", "xpu${1}", "devid", "(.*)") * 1024 * 1024,
+                  "device_name",
+                  "$1",
+                  "type",
+                  "(.*)"
+                )
+            ||| % $._config,
+          },
+          {
+            record: 'node:gpu_device:gpu_memory_total_bytes',
+            expr: |||
+                label_replace(
+                  label_replace(node_xpu_memtotal{%(kunlunxinXPUMonitoringSelector)s}, "device_num", "xpu${1}", "devid", "(.*)") * 1024 * 1024,
+                  "device_name",
+                  "$1",
+                  "type",
+                  "(.*)"
+                )
+            ||| % $._config,
+          },
+          {
+            record: 'node:gpu_device:gpu_memory_utilization',
+            expr: |||
+                label_replace(
+                  label_replace(
+                    node_xpu_memused{%(kunlunxinXPUMonitoringSelector)s} / node_xpu_memtotal{%(kunlunxinXPUMonitoringSelector)s},
+                    "device_num",
+                    "xpu${1}",
+                    "devid",
+                    "(.*)"
+                  ),
+                  "device_name",
+                  "$1",
+                  "type",
+                  "(.*)"
+                )
+            ||| % $._config,
+          },
+          {
+            record: 'node:gpu_device:gpu_utilization',
+            expr: |||
+                label_replace(
+                  label_replace(node_xpu_utilization{%(kunlunxinXPUMonitoringSelector)s}, "device_num", "xpu${1}", "devid", "(.*)") / 100,
+                  "device_name",
+                  "$1",
+                  "type",
+                  "(.*)"
+                )
+            ||| % $._config,
+          },
+          {
+            record: 'node:node_gpu_allocated_num:sum',
+            expr: |||
+              sum by (%(clusterLabel)s, node) (
+                kube_pod_container_resource_requests{%(kubeStateMetricsSelector)s,resource=~"kunlunxin_com_xpu"}
+              )
+            ||| % $._config,
+          },
+          {
+            record: 'node:node_gpu_num:sum',
+            expr: |||
+              sum by(%(clusterLabel)s, node) (
+                  kube_node_status_allocatable{%(kubeStateMetricsSelector)s,resource=~"kunlunxin_com_xpu"}
               )
             ||| % $._config,
           },

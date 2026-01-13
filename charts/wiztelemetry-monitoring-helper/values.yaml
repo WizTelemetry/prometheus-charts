@@ -66,6 +66,7 @@ defaultRules:
       ascendNPU: true
       cambriconMLU: true
       nvidiaGPU: true
+      kunlunxinXPU: true
       hami: true
 
   additionalRuleGroupLabels:
@@ -80,6 +81,7 @@ defaultRules:
       ascendNPU: {}
       cambriconMLU: {}
       nvidiaGPU: {}
+      kunlunxinXPU: {}
       hami: {}
 
   ## Additional labels for PrometheusRule alerts

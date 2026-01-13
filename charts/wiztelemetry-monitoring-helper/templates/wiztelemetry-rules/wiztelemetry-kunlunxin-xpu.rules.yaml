@@ -1,14 +1,14 @@
 {{- /*
-Generated from 'wiztelemetry-ascend-npu.rules' group from file://../../../ks-prometheus/manifests/wiztelemetry-prometheusRule.yaml
+Generated from 'wiztelemetry-kunlunxin-xpu.rules' group from file://../../../ks-prometheus/manifests/wiztelemetry-prometheusRule.yaml
 Do not change in-place! In order to change this file first read following link:
 https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack/hack
 */ -}}
 {{- $kubeTargetVersion := default .Capabilities.KubeVersion.GitVersion .Values.kubeTargetVersionOverride }}
-{{- if and (semverCompare ">=1.14.0-0" $kubeTargetVersion) (semverCompare "<9.9.9-9" $kubeTargetVersion) .Values.defaultRules.create .Values.defaultRules.rules.gpuDevice.ascendNPU }}
+{{- if and (semverCompare ">=1.14.0-0" $kubeTargetVersion) (semverCompare "<9.9.9-9" $kubeTargetVersion) .Values.defaultRules.create .Values.defaultRules.rules.gpuDevice.kunlunxinXPU }}
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
-  name: {{ printf "%s-%s" (include "wiztelemetry-monitoring-helper.fullname" .) "wiztelemetry-ascend-npu.rules" | trunc 63 | trimSuffix "-" }}
+  name: {{ printf "%s-%s" (include "wiztelemetry-monitoring-helper.fullname" .) "wiztelemetry-kunlunxin-xpu.rules" | trunc 63 | trimSuffix "-" }}
   namespace: {{ template "wiztelemetry-monitoring-helper.namespace" . }}
   labels:
     app: {{ template "wiztelemetry-monitoring-helper.name" . }}
@@ -22,14 +22,13 @@ metadata:
 {{- end }}
 spec:
   groups:
-  - name: wiztelemetry-ascend-npu.rules
+  - name: wiztelemetry-kunlunxin-xpu.rules
     rules:
     - expr: |-
         sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, namespace, pod, container, node) (
-          label_replace(
             label_replace(
               label_replace(
-                container_npu_utilization{container_name!="",exported_namespace!="",job="npu-exporter",pod_name!=""} / 100,
+                node_container_xpu_utilization{container_name!="",job="xpu-exporter",pod_name!=""} / 100,
                 "container",
                 "$1",
                 "container_name",
@@ -39,29 +38,23 @@ spec:
               "$1",
               "pod_name",
               "(.*)"
-            ),
-            "namespace",
-            "$1",
-            "exported_namespace",
-            "(.*)"
-          )
+            )
         )
       record: node_namespace_pod_container:container_gpu_utilization
-      {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.gpuDevice.ascendNPU }}
+      {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.gpuDevice.kunlunxinXPU }}
       labels:
         {{- with .Values.defaultRules.additionalRuleLabels }}
           {{- toYaml . | nindent 8 }}
         {{- end }}
-        {{- with .Values.defaultRules.additionalRuleGroupLabels.gpuDevice.ascendNPU }}
+        {{- with .Values.defaultRules.additionalRuleGroupLabels.gpuDevice.kunlunxinXPU }}
           {{- toYaml . | nindent 8 }}
         {{- end }}
       {{- end }}
     - expr: |-
         sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, namespace, pod, container, node) (
-          label_replace(
             label_replace(
               label_replace(
-                container_npu_used_memory{container_name!="",exported_namespace!="",job="npu-exporter",pod_name!=""} * 1024 * 1024,
+                node_container_xpu_memused{container_name!="",exported_namespace!="",job="xpu-exporter",pod_name!=""} * 1024 * 1024,
                 "container",
                 "$1",
                 "container_name",
@@ -71,182 +64,157 @@ spec:
               "$1",
               "pod_name",
               "(.*)"
-            ),
-            "namespace",
-            "$1",
-            "exported_namespace",
-            "(.*)"
-          )
+            )
         )
       record: node_namespace_pod_container:container_gpu_memory_usage
-      {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.gpuDevice.ascendNPU }}
+      {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.gpuDevice.kunlunxinXPU }}
       labels:
         {{- with .Values.defaultRules.additionalRuleLabels }}
           {{- toYaml . | nindent 8 }}
         {{- end }}
-        {{- with .Values.defaultRules.additionalRuleGroupLabels.gpuDevice.ascendNPU }}
+        {{- with .Values.defaultRules.additionalRuleGroupLabels.gpuDevice.kunlunxinXPU }}
           {{- toYaml . | nindent 8 }}
         {{- end }}
       {{- end }}
     - expr: |-
         label_replace(
-          label_replace(npu_chip_info_temperature{job="npu-exporter"}, "device_num", "npu${1}", "id", "(.*)"),
+          label_replace(node_xpu_temp{job="xpu-exporter"}, "device_num", "xpu${1}", "devid", "(.*)"),
           "device_name",
           "$1",
-          "model_name",
+          "type",
           "(.*)"
         )
       record: node:gpu_device:gpu_temperature
-      {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.gpuDevice.ascendNPU }}
+      {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.gpuDevice.kunlunxinXPU }}
       labels:
         {{- with .Values.defaultRules.additionalRuleLabels }}
           {{- toYaml . | nindent 8 }}
         {{- end }}
-        {{- with .Values.defaultRules.additionalRuleGroupLabels.gpuDevice.ascendNPU }}
+        {{- with .Values.defaultRules.additionalRuleGroupLabels.gpuDevice.kunlunxinXPU }}
           {{- toYaml . | nindent 8 }}
         {{- end }}
       {{- end }}
     - expr: |-
         label_replace(
-          label_replace(npu_chip_info_power{job="npu-exporter"}, "device_num", "npu${1}", "id", "(.*)"),
+          label_replace(node_xpu_powerUsage{job="xpu-exporter"}, "device_num", "xpu${1}", "devid", "(.*)"),
           "device_name",
           "$1",
-          "model_name",
+          "type",
           "(.*)"
         )
       record: node:gpu_device:gpu_power_usage
-      {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.gpuDevice.ascendNPU }}
+      {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.gpuDevice.kunlunxinXPU }}
       labels:
         {{- with .Values.defaultRules.additionalRuleLabels }}
           {{- toYaml . | nindent 8 }}
         {{- end }}
-        {{- with .Values.defaultRules.additionalRuleGroupLabels.gpuDevice.ascendNPU }}
+        {{- with .Values.defaultRules.additionalRuleGroupLabels.gpuDevice.kunlunxinXPU }}
           {{- toYaml . | nindent 8 }}
         {{- end }}
       {{- end }}
     - expr: |-
         label_replace(
-              (
-                  label_replace(npu_chip_info_used_memory{job="npu-exporter"}, "device_num", "npu${1}", "id", "(.*)")
-                or
-                  label_replace(npu_chip_info_hbm_used_memory{job="npu-exporter"}, "device_num", "npu${1}", "id", "(.*)")
-              )
-            *
-              1024
-          *
-            1024,
+          label_replace(node_xpu_memused{job="xpu-exporter"}, "device_num", "xpu${1}", "devid", "(.*)") * 1024 * 1024,
           "device_name",
           "$1",
-          "model_name",
+          "type",
           "(.*)"
         )
       record: node:gpu_device:gpu_memory_used_bytes
-      {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.gpuDevice.ascendNPU }}
+      {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.gpuDevice.kunlunxinXPU }}
       labels:
         {{- with .Values.defaultRules.additionalRuleLabels }}
           {{- toYaml . | nindent 8 }}
         {{- end }}
-        {{- with .Values.defaultRules.additionalRuleGroupLabels.gpuDevice.ascendNPU }}
+        {{- with .Values.defaultRules.additionalRuleGroupLabels.gpuDevice.kunlunxinXPU }}
           {{- toYaml . | nindent 8 }}
         {{- end }}
       {{- end }}
     - expr: |-
         label_replace(
-              (
-                  label_replace(npu_chip_info_total_memory{job="npu-exporter"}, "device_num", "npu${1}", "id", "(.*)")
-                or
-                  label_replace(npu_chip_info_hbm_total_memory{job="npu-exporter"}, "device_num", "npu${1}", "id", "(.*)")
-              )
-            *
-              1024
-          *
-            1024,
+          label_replace(node_xpu_memtotal{job="xpu-exporter"}, "device_num", "xpu${1}", "devid", "(.*)") * 1024 * 1024,
           "device_name",
           "$1",
-          "model_name",
+          "type",
           "(.*)"
         )
       record: node:gpu_device:gpu_memory_total_bytes
-      {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.gpuDevice.ascendNPU }}
+      {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.gpuDevice.kunlunxinXPU }}
       labels:
         {{- with .Values.defaultRules.additionalRuleLabels }}
           {{- toYaml . | nindent 8 }}
         {{- end }}
-        {{- with .Values.defaultRules.additionalRuleGroupLabels.gpuDevice.ascendNPU }}
+        {{- with .Values.defaultRules.additionalRuleGroupLabels.gpuDevice.kunlunxinXPU }}
           {{- toYaml . | nindent 8 }}
         {{- end }}
       {{- end }}
     - expr: |-
         label_replace(
           label_replace(
-            (
-                (npu_chip_info_used_memory{job="npu-exporter"} / npu_chip_info_total_memory{job="npu-exporter"})
-              or
-                (npu_chip_info_hbm_used_memory{job="npu-exporter"} / npu_chip_info_hbm_total_memory{job="npu-exporter"})
-            ),
+            node_xpu_memused{job="xpu-exporter"} / node_xpu_memtotal{job="xpu-exporter"},
             "device_num",
-            "npu${1}",
-            "id",
+            "xpu${1}",
+            "devid",
             "(.*)"
           ),
           "device_name",
           "$1",
-          "model_name",
+          "type",
           "(.*)"
         )
       record: node:gpu_device:gpu_memory_utilization
-      {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.gpuDevice.ascendNPU }}
+      {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.gpuDevice.kunlunxinXPU }}
       labels:
         {{- with .Values.defaultRules.additionalRuleLabels }}
           {{- toYaml . | nindent 8 }}
         {{- end }}
-        {{- with .Values.defaultRules.additionalRuleGroupLabels.gpuDevice.ascendNPU }}
+        {{- with .Values.defaultRules.additionalRuleGroupLabels.gpuDevice.kunlunxinXPU }}
           {{- toYaml . | nindent 8 }}
         {{- end }}
       {{- end }}
     - expr: |-
         label_replace(
-          label_replace(npu_chip_info_utilization{job="npu-exporter"}, "device_num", "npu${1}", "id", "(.*)") / 100,
+          label_replace(node_xpu_utilization{job="xpu-exporter"}, "device_num", "xpu${1}", "devid", "(.*)") / 100,
           "device_name",
           "$1",
-          "model_name",
+          "type",
           "(.*)"
         )
       record: node:gpu_device:gpu_utilization
-      {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.gpuDevice.ascendNPU }}
+      {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.gpuDevice.kunlunxinXPU }}
       labels:
         {{- with .Values.defaultRules.additionalRuleLabels }}
           {{- toYaml . | nindent 8 }}
         {{- end }}
-        {{- with .Values.defaultRules.additionalRuleGroupLabels.gpuDevice.ascendNPU }}
+        {{- with .Values.defaultRules.additionalRuleGroupLabels.gpuDevice.kunlunxinXPU }}
           {{- toYaml . | nindent 8 }}
         {{- end }}
       {{- end }}
     - expr: |-
         sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, node) (
-          kube_pod_container_resource_requests{job="kube-state-metrics",resource=~"huawei_com_Ascend(.*)"}
+          kube_pod_container_resource_requests{job="kube-state-metrics",resource=~"kunlunxin_com_xpu"}
         )
       record: node:node_gpu_allocated_num:sum
-      {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.gpuDevice.ascendNPU }}
+      {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.gpuDevice.kunlunxinXPU }}
       labels:
         {{- with .Values.defaultRules.additionalRuleLabels }}
           {{- toYaml . | nindent 8 }}
         {{- end }}
-        {{- with .Values.defaultRules.additionalRuleGroupLabels.gpuDevice.ascendNPU }}
+        {{- with .Values.defaultRules.additionalRuleGroupLabels.gpuDevice.kunlunxinXPU }}
           {{- toYaml . | nindent 8 }}
         {{- end }}
       {{- end }}
     - expr: |-
         sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, node) (
-            kube_node_status_allocatable{job="kube-state-metrics",resource=~"huawei_com_Ascend(.*)"}
+            kube_node_status_allocatable{job="kube-state-metrics",resource=~"kunlunxin_com_xpu"}
         )
       record: node:node_gpu_num:sum
-      {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.gpuDevice.ascendNPU }}
+      {{- if or .Values.defaultRules.additionalRuleLabels .Values.defaultRules.additionalRuleGroupLabels.gpuDevice.kunlunxinXPU }}
       labels:
         {{- with .Values.defaultRules.additionalRuleLabels }}
           {{- toYaml . | nindent 8 }}
         {{- end }}
-        {{- with .Values.defaultRules.additionalRuleGroupLabels.gpuDevice.ascendNPU }}
+        {{- with .Values.defaultRules.additionalRuleGroupLabels.gpuDevice.kunlunxinXPU }}
           {{- toYaml . | nindent 8 }}
         {{- end }}
       {{- end }}

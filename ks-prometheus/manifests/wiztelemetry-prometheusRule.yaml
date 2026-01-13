@@ -14,18 +14,10 @@ spec:
     rules:
     - expr: |
         max by (cluster, node, ip, workspace, namespace, pod, qos_class, phase, workload, workload_type) (
-                    kube_pod_info{job="kube-state-metrics"}
-                  * on (cluster, namespace, pod) group_left (qos_class)
-                    max by (cluster, namespace, pod, qos_class) (
-                      kube_pod_status_qos_class{job="kube-state-metrics"} > 0
-                    )
-                * on (cluster, namespace, pod) group_left (ip)
-                  max by (cluster, namespace, pod, ip) (
-                      kube_pod_ips{job="kube-state-metrics"}
-                    or
-                        sum by (pod, namespace, cluster) (kube_pod_info{job="kube-state-metrics"})
-                      unless
-                        sum by (pod, namespace, cluster) (kube_pod_ips{job="kube-state-metrics"})
+                  label_join(kube_pod_info{job="kube-state-metrics"}, "ip", "$1", "pod_ip")
+                * on (cluster, namespace, pod) group_left (qos_class)
+                  max by (cluster, namespace, pod, qos_class) (
+                    kube_pod_status_qos_class{job="kube-state-metrics"} > 0
                   )
               * on (cluster, namespace, pod) group_left (phase)
                 max by (cluster, namespace, pod, phase) (kube_pod_status_phase{job="kube-state-metrics"} > 0)
@@ -914,7 +906,15 @@ spec:
       record: node:gpu_device:gpu_power_usage
     - expr: |
         label_replace(
-          label_replace(npu_chip_info_used_memory{job="npu-exporter"}, "device_num", "npu${1}", "id", "(.*)") * 1024 * 1024,
+              (
+                  label_replace(npu_chip_info_used_memory{job="npu-exporter"}, "device_num", "npu${1}", "id", "(.*)")
+                or
+                  label_replace(npu_chip_info_hbm_used_memory{job="npu-exporter"}, "device_num", "npu${1}", "id", "(.*)")
+              )
+            *
+              1024
+          *
+            1024,
           "device_name",
           "$1",
           "model_name",
@@ -923,7 +923,15 @@ spec:
       record: node:gpu_device:gpu_memory_used_bytes
     - expr: |
         label_replace(
-          label_replace(npu_chip_info_total_memory{job="npu-exporter"}, "device_num", "npu${1}", "id", "(.*)") * 1024 * 1024,
+              (
+                  label_replace(npu_chip_info_total_memory{job="npu-exporter"}, "device_num", "npu${1}", "id", "(.*)")
+                or
+                  label_replace(npu_chip_info_hbm_total_memory{job="npu-exporter"}, "device_num", "npu${1}", "id", "(.*)")
+              )
+            *
+              1024
+          *
+            1024,
           "device_name",
           "$1",
           "model_name",
@@ -933,7 +941,11 @@ spec:
     - expr: |
         label_replace(
           label_replace(
-            npu_chip_info_used_memory{job="npu-exporter"} / npu_chip_info_total_memory{job="npu-exporter"},
+            (
+                (npu_chip_info_used_memory{job="npu-exporter"} / npu_chip_info_total_memory{job="npu-exporter"})
+              or
+                (npu_chip_info_hbm_used_memory{job="npu-exporter"} / npu_chip_info_hbm_total_memory{job="npu-exporter"})
+            ),
             "device_num",
             "npu${1}",
             "id",
@@ -962,6 +974,112 @@ spec:
     - expr: |
         sum by(cluster, node) (
             kube_node_status_allocatable{job="kube-state-metrics",resource=~"huawei_com_Ascend(.*)"}
+        )
+      record: node:node_gpu_num:sum
+  - name: wiztelemetry-kunlunxin-xpu.rules
+    rules:
+    - expr: |
+        sum by (cluster, namespace, pod, container, node) (
+            label_replace(
+              label_replace(
+                node_container_xpu_utilization{container_name!="",job="xpu-exporter",pod_name!=""} / 100,
+                "container",
+                "$1",
+                "container_name",
+                "(.*)"
+              ),
+              "pod",
+              "$1",
+              "pod_name",
+              "(.*)"
+            )
+        )
+      record: node_namespace_pod_container:container_gpu_utilization
+    - expr: |
+        sum by (cluster, namespace, pod, container, node) (
+            label_replace(
+              label_replace(
+                node_container_xpu_memused{container_name!="",exported_namespace!="",job="xpu-exporter",pod_name!=""} * 1024 * 1024,
+                "container",
+                "$1",
+                "container_name",
+                "(.*)"
+              ),
+              "pod",
+              "$1",
+              "pod_name",
+              "(.*)"
+            )
+        )
+      record: node_namespace_pod_container:container_gpu_memory_usage
+    - expr: |
+        label_replace(
+          label_replace(node_xpu_temp{job="xpu-exporter"}, "device_num", "xpu${1}", "devid", "(.*)"),
+          "device_name",
+          "$1",
+          "type",
+          "(.*)"
+        )
+      record: node:gpu_device:gpu_temperature
+    - expr: |
+        label_replace(
+          label_replace(node_xpu_powerUsage{job="xpu-exporter"}, "device_num", "xpu${1}", "devid", "(.*)"),
+          "device_name",
+          "$1",
+          "type",
+          "(.*)"
+        )
+      record: node:gpu_device:gpu_power_usage
+    - expr: |
+        label_replace(
+          label_replace(node_xpu_memused{job="xpu-exporter"}, "device_num", "xpu${1}", "devid", "(.*)") * 1024 * 1024,
+          "device_name",
+          "$1",
+          "type",
+          "(.*)"
+        )
+      record: node:gpu_device:gpu_memory_used_bytes
+    - expr: |
+        label_replace(
+          label_replace(node_xpu_memtotal{job="xpu-exporter"}, "device_num", "xpu${1}", "devid", "(.*)") * 1024 * 1024,
+          "device_name",
+          "$1",
+          "type",
+          "(.*)"
+        )
+      record: node:gpu_device:gpu_memory_total_bytes
+    - expr: |
+        label_replace(
+          label_replace(
+            node_xpu_memused{job="xpu-exporter"} / node_xpu_memtotal{job="xpu-exporter"},
+            "device_num",
+            "xpu${1}",
+            "devid",
+            "(.*)"
+          ),
+          "device_name",
+          "$1",
+          "type",
+          "(.*)"
+        )
+      record: node:gpu_device:gpu_memory_utilization
+    - expr: |
+        label_replace(
+          label_replace(node_xpu_utilization{job="xpu-exporter"}, "device_num", "xpu${1}", "devid", "(.*)") / 100,
+          "device_name",
+          "$1",
+          "type",
+          "(.*)"
+        )
+      record: node:gpu_device:gpu_utilization
+    - expr: |
+        sum by (cluster, node) (
+          kube_pod_container_resource_requests{job="kube-state-metrics",resource=~"kunlunxin_com_xpu"}
+        )
+      record: node:node_gpu_allocated_num:sum
+    - expr: |
+        sum by(cluster, node) (
+            kube_node_status_allocatable{job="kube-state-metrics",resource=~"kunlunxin_com_xpu"}
         )
       record: node:node_gpu_num:sum
   - name: wiztelemetry-hami.rules

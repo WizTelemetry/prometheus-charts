@@ -143,6 +143,7 @@ condition_map = {
     'wiztelemetry-ascend-npu.rules': ' .Values.defaultRules.rules.gpuDevice.ascendNPU',
     'wiztelemetry-cambricon-mlu.rules': ' .Values.defaultRules.rules.gpuDevice.cambriconMLU',
     'wiztelemetry-nvidia-gpu.rules': ' .Values.defaultRules.rules.gpuDevice.nvidiaGPU',
+    'wiztelemetry-kunlunxin-xpu.rules': ' .Values.defaultRules.rules.gpuDevice.kunlunxinXPU',
     'wiztelemetry-hami.rules': ' .Values.defaultRules.rules.gpuDevice.hami'
 }
 

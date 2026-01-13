@@ -25,24 +25,16 @@
             // must kms version > 2.8.0
             record: 'workspace_workload_node:kube_pod_info:',
             expr: |||
-              max by (%(clusterLabel)s, node, ip, workspace, namespace, pod, qos_class, phase, workload, workload_type) (
-                          kube_pod_info{%(kubeStateMetricsSelector)s}
-                        * on (%(clusterLabel)s, namespace, pod) group_left (qos_class)
-                          max by (%(clusterLabel)s, namespace, pod, qos_class) (
-                            kube_pod_status_qos_class{%(kubeStateMetricsSelector)s} > 0
-                          )
-                      * on (%(clusterLabel)s, namespace, pod) group_left (ip)
-                        max by (%(clusterLabel)s, namespace, pod, ip) (
-                            kube_pod_ips{%(kubeStateMetricsSelector)s}
-                          or
-                              sum by (pod, namespace, cluster) (kube_pod_info{%(kubeStateMetricsSelector)s})
-                            unless
-                              sum by (pod, namespace, cluster) (kube_pod_ips{%(kubeStateMetricsSelector)s})
+              max by (cluster, node, ip, workspace, namespace, pod, qos_class, phase, workload, workload_type) (
+                        label_join(kube_pod_info{%(kubeStateMetricsSelector)s}, "ip", "$1", "pod_ip")
+                      * on (cluster, namespace, pod) group_left (qos_class)
+                        max by (cluster, namespace, pod, qos_class) (
+                          kube_pod_status_qos_class{%(kubeStateMetricsSelector)s} > 0
                         )
-                    * on (%(clusterLabel)s, namespace, pod) group_left (phase)
-                      max by (%(clusterLabel)s, namespace, pod, phase) (kube_pod_status_phase{%(kubeStateMetricsSelector)s} > 0)
-                  * on (%(clusterLabel)s, namespace, pod) group_left (workload, workload_type)
-                    max by (%(clusterLabel)s, namespace, pod, workload, workload_type) (
+                    * on (cluster, namespace, pod) group_left (phase)
+                      max by (cluster, namespace, pod, phase) (kube_pod_status_phase{%(kubeStateMetricsSelector)s} > 0)
+                  * on (cluster, namespace, pod) group_left (workload, workload_type)
+                    max by (cluster, namespace, pod, workload, workload_type) (
                         label_join(
                           label_join(
                             kube_pod_owner{%(kubeStateMetricsSelector)s,owner_kind!~"ReplicaSet|DaemonSet|StatefulSet|Job"},
@@ -56,11 +48,11 @@
                         )
                       or
                           kube_pod_owner{%(kubeStateMetricsSelector)s,owner_kind=~"ReplicaSet|DaemonSet|StatefulSet|Job"}
-                        * on (%(clusterLabel)s, namespace, pod) group_left (workload_type, workload)
+                        * on (cluster, namespace, pod) group_left (workload_type, workload)
                           namespace_workload_pod:kube_pod_owner:relabel
                     )
-                * on (%(clusterLabel)s, namespace) group_left (workspace)
-                  max by (%(clusterLabel)s, namespace, workspace) (kube_namespace_labels{%(kubeStateMetricsSelector)s})
+                * on (cluster, namespace) group_left (workspace)
+                  max by (cluster, namespace, workspace) (kube_namespace_labels{%(kubeStateMetricsSelector)s})
               )
             ||| % $._config
           },
@@ -531,7 +523,7 @@
           {
             record: 'namespace_workload:workload_created:relabel',
             expr: |||
-              label_replace(kube_deployment_created{job="kube-state-metrics"},"workload", "$1", "deployment", "(.*)")
+              label_replace(kube_deployment_created{%(kubeStateMetricsSelector)s},"workload", "$1", "deployment", "(.*)")
             ||| % $._config,
             labels: {
               workload_type: 'deployment',
@@ -540,7 +532,7 @@
           {
             record: 'namespace_workload:workload_replicas:relabel',
             expr: |||
-              label_replace(kube_deployment_spec_replicas{job="kube-state-metrics"},"workload", "$1", "deployment", "(.*)")
+              label_replace(kube_deployment_spec_replicas{%(kubeStateMetricsSelector)s},"workload", "$1", "deployment", "(.*)")
             ||| % $._config,
             labels: {
               workload_type: 'deployment',
@@ -549,7 +541,7 @@
           {
             record: 'namespace_workload:workload_replicas_ready:relabel',
             expr: |||
-              label_replace(kube_deployment_status_replicas_ready{job="kube-state-metrics"},"workload", "$1", "deployment", "(.*)")
+              label_replace(kube_deployment_status_replicas_ready{%(kubeStateMetricsSelector)s},"workload", "$1", "deployment", "(.*)")
             ||| % $._config,
             labels: {
               workload_type: 'deployment',
@@ -558,7 +550,7 @@
           {
             record: 'namespace_workload:workload_created:relabel',
             expr: |||
-              label_replace(kube_statefulset_created{job="kube-state-metrics"},"workload", "$1", "statefulset", "(.*)")
+              label_replace(kube_statefulset_created{%(kubeStateMetricsSelector)s},"workload", "$1", "statefulset", "(.*)")
             ||| % $._config,
             labels: {
               workload_type: 'statefulset',
@@ -567,7 +559,7 @@
           {
             record: 'namespace_workload:workload_replicas:relabel',
             expr: |||
-              label_replace(kube_statefulset_replicas{job="kube-state-metrics"},"workload", "$1", "statefulset", "(.*)")
+              label_replace(kube_statefulset_replicas{%(kubeStateMetricsSelector)s},"workload", "$1", "statefulset", "(.*)")
             ||| % $._config,
             labels: {
               workload_type: 'statefulset',
@@ -576,7 +568,7 @@
           {
             record: 'namespace_workload:workload_replicas_ready:relabel',
             expr: |||
-              label_replace(kube_statefulset_status_replicas_ready{job="kube-state-metrics"},"workload", "$1", "statefulset", "(.*)")
+              label_replace(kube_statefulset_status_replicas_ready{%(kubeStateMetricsSelector)s},"workload", "$1", "statefulset", "(.*)")
             ||| % $._config,
             labels: {
               workload_type: 'statefulset',
@@ -585,7 +577,7 @@
           {
             record: 'namespace_workload:workload_created:relabel',
             expr: |||
-              label_replace(kube_daemonset_created{job="kube-state-metrics"},"workload", "$1", "daemonset", "(.*)")
+              label_replace(kube_daemonset_created{%(kubeStateMetricsSelector)s},"workload", "$1", "daemonset", "(.*)")
             ||| % $._config,
             labels: {
               workload_type: 'daemonset',
@@ -594,7 +586,7 @@
           {
             record: 'namespace_workload:workload_replicas:relabel',
             expr: |||
-              label_replace(kube_daemonset_status_desired_number_scheduled{job="kube-state-metrics"},"workload", "$1", "daemonset", "(.*)")
+              label_replace(kube_daemonset_status_desired_number_scheduled{%(kubeStateMetricsSelector)s},"workload", "$1", "daemonset", "(.*)")
             ||| % $._config,
             labels: {
               workload_type: 'daemonset',
@@ -603,7 +595,7 @@
           {
             record: 'namespace_workload:workload_replicas_ready:relabel',
             expr: |||
-              label_replace(kube_daemonset_status_number_ready{job="kube-state-metrics"},"workload", "$1", "daemonset", "(.*)")
+              label_replace(kube_daemonset_status_number_ready{%(kubeStateMetricsSelector)s},"workload", "$1", "daemonset", "(.*)")
             ||| % $._config,
             labels: {
               workload_type: 'daemonset',

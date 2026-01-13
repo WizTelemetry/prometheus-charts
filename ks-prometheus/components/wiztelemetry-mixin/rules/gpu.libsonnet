@@ -427,7 +427,15 @@
             record: 'node:gpu_device:gpu_memory_used_bytes',
             expr: |||
                 label_replace(
-                  label_replace(npu_chip_info_used_memory{%(ascendNPUMonitoringSelector)s}, "device_num", "npu${1}", "id", "(.*)") * 1024 * 1024,
+                      (
+                          label_replace(npu_chip_info_used_memory{%(ascendNPUMonitoringSelector)s}, "device_num", "npu${1}", "id", "(.*)")
+                        or
+                          label_replace(npu_chip_info_hbm_used_memory{%(ascendNPUMonitoringSelector)s}, "device_num", "npu${1}", "id", "(.*)")
+                      )
+                    *
+                      1024
+                  *
+                    1024,
                   "device_name",
                   "$1",
                   "model_name",
@@ -439,7 +447,15 @@
             record: 'node:gpu_device:gpu_memory_total_bytes',
             expr: |||
                 label_replace(
-                  label_replace(npu_chip_info_total_memory{%(ascendNPUMonitoringSelector)s}, "device_num", "npu${1}", "id", "(.*)") * 1024 * 1024,
+                      (
+                          label_replace(npu_chip_info_total_memory{%(ascendNPUMonitoringSelector)s}, "device_num", "npu${1}", "id", "(.*)")
+                        or
+                          label_replace(npu_chip_info_hbm_total_memory{%(ascendNPUMonitoringSelector)s}, "device_num", "npu${1}", "id", "(.*)")
+                      )
+                    *
+                      1024
+                  *
+                    1024,
                   "device_name",
                   "$1",
                   "model_name",
@@ -452,7 +468,11 @@
             expr: |||
                 label_replace(
                   label_replace(
-                    npu_chip_info_used_memory{%(ascendNPUMonitoringSelector)s} / npu_chip_info_total_memory{%(ascendNPUMonitoringSelector)s},
+                    (
+                        (npu_chip_info_used_memory{%(ascendNPUMonitoringSelector)s} / npu_chip_info_total_memory{%(ascendNPUMonitoringSelector)s})
+                      or
+                        (npu_chip_info_hbm_used_memory{%(ascendNPUMonitoringSelector)s} / npu_chip_info_hbm_total_memory{%(ascendNPUMonitoringSelector)s})
+                    ),
                     "device_num",
                     "npu${1}",
                     "id",

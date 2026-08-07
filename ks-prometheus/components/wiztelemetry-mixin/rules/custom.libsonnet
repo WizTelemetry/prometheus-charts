@@ -327,7 +327,7 @@
             expr: |||
               sum by (%(clusterLabel)s, node) (
                   sum by (%(clusterLabel)s, instance, namespace, %(podLabel)s) (
-                    irate(node_disk_read_bytes_total{%(nodeExporterSelector)s}[5m])
+                    irate(node_disk_reads_completed_total{%(nodeExporterSelector)s}[5m])
                   )
                 * on (%(clusterLabel)s, namespace, %(podLabel)s) group_left (node)
                   topk by (%(clusterLabel)s, namespace, %(podLabel)s) (1, node_namespace_pod:kube_pod_info:)

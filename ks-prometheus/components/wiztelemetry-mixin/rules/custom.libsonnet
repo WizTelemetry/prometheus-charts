@@ -37,7 +37,7 @@
                     max by (%(clusterLabel)s, namespace, pod, workload, workload_type) (
                         label_join(
                           label_join(
-                            kube_pod_owner{%(kubeStateMetricsSelector)s,owner_kind!~"ReplicaSet|DaemonSet|StatefulSet|Job"},
+                            kube_pod_owner{%(kubeStateMetricsSelector)s, owner_is_controller="true", owner_kind!~"ReplicaSet|DaemonSet|StatefulSet|Job"},
                             "workload",
                             "$1",
                             "owner_name"
@@ -47,7 +47,7 @@
                           "owner_kind"
                         )
                       or
-                          kube_pod_owner{%(kubeStateMetricsSelector)s,owner_kind=~"ReplicaSet|DaemonSet|StatefulSet|Job"}
+                          kube_pod_owner{%(kubeStateMetricsSelector)s, owner_is_controller="true", owner_kind=~"ReplicaSet|DaemonSet|StatefulSet|Job"}
                         * on (%(clusterLabel)s, namespace, pod) group_left (workload_type, workload)
                           namespace_workload_pod:kube_pod_owner:relabel
                     )

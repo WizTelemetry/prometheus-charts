@@ -354,7 +354,7 @@ spec:
     - expr: |-
         sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, node) (
             sum by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, instance, namespace, pod) (
-              irate(node_disk_read_bytes_total{job="node-exporter"}[5m])
+              irate(node_disk_reads_completed_total{job="node-exporter"}[5m])
             )
           * on ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, namespace, pod) group_left (node)
             topk by ({{ range $.Values.defaultRules.additionalAggregationLabels }}{{ . }},{{ end }}cluster, namespace, pod) (1, node_namespace_pod:kube_pod_info:)

@@ -37,7 +37,7 @@
                     max by (%(clusterLabel)s, namespace, pod, workload, workload_type) (
                         label_join(
                           label_join(
-                            kube_pod_owner{%(kubeStateMetricsSelector)s,owner_kind!~"ReplicaSet|DaemonSet|StatefulSet|Job"},
+                            kube_pod_owner{%(kubeStateMetricsSelector)s, owner_is_controller="true", owner_kind!~"ReplicaSet|DaemonSet|StatefulSet|Job"},
                             "workload",
                             "$1",
                             "owner_name"
@@ -47,7 +47,7 @@
                           "owner_kind"
                         )
                       or
-                          kube_pod_owner{%(kubeStateMetricsSelector)s,owner_kind=~"ReplicaSet|DaemonSet|StatefulSet|Job"}
+                          kube_pod_owner{%(kubeStateMetricsSelector)s, owner_is_controller="true", owner_kind=~"ReplicaSet|DaemonSet|StatefulSet|Job"}
                         * on (%(clusterLabel)s, namespace, pod) group_left (workload_type, workload)
                           namespace_workload_pod:kube_pod_owner:relabel
                     )
@@ -327,7 +327,7 @@
             expr: |||
               sum by (%(clusterLabel)s, node) (
                   sum by (%(clusterLabel)s, instance, namespace, %(podLabel)s) (
-                    irate(node_disk_read_bytes_total{%(nodeExporterSelector)s}[5m])
+                    irate(node_disk_reads_completed_total{%(nodeExporterSelector)s}[5m])
                   )
                 * on (%(clusterLabel)s, namespace, %(podLabel)s) group_left (node)
                   topk by (%(clusterLabel)s, namespace, %(podLabel)s) (1, node_namespace_pod:kube_pod_info:)
